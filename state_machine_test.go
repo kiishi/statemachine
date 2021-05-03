@@ -1,6 +1,7 @@
 package statemachine
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"testing"
@@ -109,6 +110,38 @@ func TestNewMachine(t *testing.T) {
 		sampleStateMachine.EmitSequence("move", "jump")
 
 		if sampleStateMachine.GetCurrentState().GetIdentifier() != strconv.Itoa(STATE3){
+			t.Fail()
+		}
+	})
+
+	t.Run("OnTransition is called when a new state is entered", func(t *testing.T) {
+		buffer := new(bytes.Buffer)
+		transition1 := TransitionRule{
+			EventName:        "move",
+			CurrentState:     strconv.Itoa(STATE1),
+			DestinationState: strconv.Itoa(STATE2),
+			OnTransition: func(rule *TransitionRule, newState, previousState State) {
+				buffer.Write([]byte("x"))
+			},
+		}
+		transition2 := TransitionRule{
+			EventName:        "jump",
+			CurrentState:     strconv.Itoa(STATE2),
+			DestinationState: strconv.Itoa(STATE3),
+			OnTransition: func(rule *TransitionRule, newState, previousState State) {
+				buffer.Write([]byte("y"))
+			},
+		}
+		sampleStateMachine := NewMachine(&Config{
+			States: []State{&state1, &state2, &state3},
+			Transitions: []*TransitionRule{
+				&transition1,
+				&transition2,
+			},
+		},
+			0)
+		sampleStateMachine.EmitSequence("move", "jump")
+		if buffer.String() != "xy" {
 			t.Fail()
 		}
 	})

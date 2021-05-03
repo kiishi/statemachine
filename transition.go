@@ -4,5 +4,5 @@ type TransitionRule struct {
 	EventName        string
 	CurrentState     string
 	DestinationState string
-	OnTransition     func(rule *TransitionRule, newState State)
+	OnTransition     func(rule *TransitionRule, newState, previousState State)
 }

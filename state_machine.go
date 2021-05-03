@@ -54,6 +54,9 @@ func (s *StateMachine) Emit(eventName string) error {
 		if transition.CurrentState == s.CurrentState.GetIdentifier() {
 			//	check if destination state exist
 			if val, ok := s.StateMap[transition.DestinationState]; ok {
+				if transition.OnTransition != nil{
+					transition.OnTransition(transition, val, s.CurrentState)
+				}
 				s.CurrentState = val
 				return nil
 			}
