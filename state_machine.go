@@ -16,17 +16,29 @@ type Config struct {
 }
 
 func NewMachine(config *Config, initialStateIndex int) *StateMachine {
+	var defaultCurrentState State
+	if config.States != nil && len(config.States) > initialStateIndex{
+		defaultCurrentState = config.States[initialStateIndex]
+	}
+
 	newMachine:= &StateMachine{
-		CurrentState:          config.States[initialStateIndex],
+		CurrentState:          defaultCurrentState,
 		StateMap:              make(map[string]State),
 		TransitionRules:       make(map[string]*TransitionRule),
 	}
-	for _ , val := range config.States{
-		newMachine.AddState(val)
+
+	if config.States != nil{
+		for _ , val := range config.States{
+			newMachine.AddState(val)
+		}
 	}
-	for _ , val := range config.Transitions{
-		newMachine.AddTransition(val)
+
+	if config.Transitions != nil{
+		for _ , val := range config.Transitions{
+			newMachine.AddTransition(val)
+		}
 	}
+
 	return newMachine
 }
 
@@ -35,6 +47,10 @@ func (s *StateMachine) AddTransition(transitionRule *TransitionRule) {
 }
 
 func (s *StateMachine) AddState(state State) error {
+	// if the current state is nil, the first state added becomes the default state
+	if s.CurrentState == nil{
+		s.CurrentState = state
+	}
 	s.StateMap[state.GetIdentifier()] = state
 	return nil
 }
@@ -47,6 +63,14 @@ func (s *StateMachine) EmitSequence(eventNames ...string) error{
 		}
 	}
 	return nil
+}
+
+func (s *StateMachine) SetState(stateId string) error{
+	if state , ok := s.StateMap[stateId]; ok{
+		s.CurrentState = state
+		return nil
+	}
+	return errors.New("State doesn't exist")
 }
 
 func (s *StateMachine) Emit(eventName string) error {

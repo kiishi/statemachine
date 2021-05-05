@@ -1,3 +1,3 @@
-module github.com/deolu-asenuga/state-machine
+module github.com/kiishi/statemachine
 
 go 1.16
