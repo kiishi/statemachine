@@ -40,8 +40,7 @@ func TestNewMachine(t *testing.T) {
 		sampleStateMachine := NewMachine(&Config{
 			States:      []State{&state1, &state2, &state3},
 			Transitions: nil,
-		},
-			0) //setting state1 as inital state
+		})
 		sampleStateMachine.Emit("Hello")
 		if sampleStateMachine.GetCurrentState().GetIdentifier() != state1.GetIdentifier() {
 			t.Errorf("State Do not match")
@@ -59,8 +58,7 @@ func TestNewMachine(t *testing.T) {
 			Transitions: []*TransitionRule{
 				&transition1,
 			},
-		},
-			0) //setting state1 as inital state
+		})
 		sampleStateMachine.Emit("move")
 		if sampleStateMachine.GetCurrentState().GetIdentifier() != "1" {
 			t.Errorf("Current state at %s", sampleStateMachine.GetCurrentState().GetIdentifier())
@@ -78,8 +76,7 @@ func TestNewMachine(t *testing.T) {
 			Transitions: []*TransitionRule{
 				&transition1,
 			},
-		},
-			0) //setting state1 as inital state
+		}) //setting state1 as inital state
 		error := sampleStateMachine.Emit("move")
 		//fmt.Println(sampleStateMachine.CurrentState.GetIdentifier() == strconv.Itoa(STATE1))
 
@@ -105,11 +102,10 @@ func TestNewMachine(t *testing.T) {
 				&transition1,
 				&transition2,
 			},
-		},
-			0)
+		})
 		sampleStateMachine.EmitSequence("move", "jump")
 
-		if sampleStateMachine.GetCurrentState().GetIdentifier() != strconv.Itoa(STATE3){
+		if sampleStateMachine.GetCurrentState().GetIdentifier() != strconv.Itoa(STATE3) {
 			t.Fail()
 		}
 	})
@@ -138,11 +134,49 @@ func TestNewMachine(t *testing.T) {
 				&transition1,
 				&transition2,
 			},
-		},
-			0)
+		})
 		sampleStateMachine.EmitSequence("move", "jump")
 		if buffer.String() != "xy" {
 			t.Fail()
 		}
 	})
+
+	t.Run("Should panic for empty state list in config ", func(t *testing.T) {
+		transition1 := TransitionRule{
+			EventName:        "move",
+			CurrentState:     strconv.Itoa(STATE1),
+			DestinationState: strconv.Itoa(STATE2),
+		}
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("Panic for invalid state not thrown")
+			}
+		}()
+
+		NewMachine(&Config{
+			States: []State{},
+			Transitions: []*TransitionRule{
+				&transition1,
+			},
+		})
+	})
+
+	t.Run("should allow heterogenous forms of transitionRule parameters (current and destination state)", func(t *testing.T) {
+		transition1 := TransitionRule{
+			EventName:        "move",
+			CurrentState:     strconv.Itoa(STATE1),
+			DestinationState: &state2, // uses pointer to state
+		}
+		sampleStateMachine := NewMachine(&Config{
+			States: []State{&state1, &state2, &state3},
+			Transitions: []*TransitionRule{
+				&transition1,
+			},
+		})
+		sampleStateMachine.Emit("move")
+		if sampleStateMachine.GetCurrentState().GetIdentifier() != "1" {
+			t.Errorf("Current state at %s", sampleStateMachine.GetCurrentState().GetIdentifier())
+		}
+	})
+
 }

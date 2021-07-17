@@ -2,12 +2,13 @@ package statemachine
 
 import (
 	"errors"
+	"fmt"
 )
 
 type StateMachine struct {
-	CurrentState          State
-	StateMap              map[string]State
-	TransitionRules       map[string]*TransitionRule
+	CurrentState    State
+	StateMap        map[string]State
+	TransitionRules map[string]*TransitionRule
 }
 
 type Config struct {
@@ -15,26 +16,45 @@ type Config struct {
 	Transitions []*TransitionRule
 }
 
-func NewMachine(config *Config, initialStateIndex int) *StateMachine {
-	var defaultCurrentState State
-	if config.States != nil && len(config.States) > initialStateIndex{
-		defaultCurrentState = config.States[initialStateIndex]
+func validateConfig(config *Config) {
+	//	check state length
+	if len(config.States) == 0 {
+		panic(errors.New("Cannot accept Empty array for states"))
+	}
+	allStatesMap := map[string]int{}
+
+	for _, val := range config.States {
+		identifier := val.GetIdentifier()
+		if _, ok := allStatesMap[identifier]; !ok {
+			allStatesMap[identifier] = 1
+			continue
+		}
+		panic(errors.New(fmt.Sprintf("Duplicate state identifier %s found ", identifier)))
 	}
 
-	newMachine:= &StateMachine{
-		CurrentState:          defaultCurrentState,
-		StateMap:              make(map[string]State),
-		TransitionRules:       make(map[string]*TransitionRule),
+	/*	TODO: add check for transactionRule, should check if the currentState and
+		destinationState are strictly strings or pointers to structs that implement the State interface
+	*/
+
+}
+
+func NewMachine(config *Config) *StateMachine {
+	//throw an error is state array is empty
+	validateConfig(config)
+	newMachine := &StateMachine{
+		CurrentState:    config.States[0],
+		StateMap:        make(map[string]State),
+		TransitionRules: make(map[string]*TransitionRule),
 	}
 
-	if config.States != nil{
-		for _ , val := range config.States{
+	if config.States != nil {
+		for _, val := range config.States {
 			newMachine.AddState(val)
 		}
 	}
 
-	if config.Transitions != nil{
-		for _ , val := range config.Transitions{
+	if config.Transitions != nil {
+		for _, val := range config.Transitions {
 			newMachine.AddTransition(val)
 		}
 	}
@@ -48,25 +68,25 @@ func (s *StateMachine) AddTransition(transitionRule *TransitionRule) {
 
 func (s *StateMachine) AddState(state State) error {
 	// if the current state is nil, the first state added becomes the default state
-	if s.CurrentState == nil{
+	if s.CurrentState == nil {
 		s.CurrentState = state
 	}
 	s.StateMap[state.GetIdentifier()] = state
 	return nil
 }
 
-func (s *StateMachine) EmitSequence(eventNames ...string) error{
-	for _, event := range eventNames{
+func (s *StateMachine) EmitSequence(eventNames ...string) error {
+	for _, event := range eventNames {
 		err := s.Emit(event)
-		if err != nil{
-			return errors.New("Invalid Transaction sequence ==>"+ err.Error())
+		if err != nil {
+			return errors.New("Invalid Transaction sequence ==>" + err.Error())
 		}
 	}
 	return nil
 }
 
-func (s *StateMachine) SetState(stateId string) error{
-	if state , ok := s.StateMap[stateId]; ok{
+func (s *StateMachine) SetState(stateId string) error {
+	if state, ok := s.StateMap[stateId]; ok {
 		s.CurrentState = state
 		return nil
 	}
@@ -75,16 +95,38 @@ func (s *StateMachine) SetState(stateId string) error{
 
 func (s *StateMachine) Emit(eventName string) error {
 	if transition, ok := s.TransitionRules[eventName]; ok {
-		if transition.CurrentState == s.CurrentState.GetIdentifier() {
+		var stringCurrentState string
+		var stringDestinationState string
+
+		/*
+			cleanup transition rule by recognizing which of the state interfaces are
+			regular strings or state structs
+		*/
+		if val, ok := transition.CurrentState.(string); ok {
+			stringCurrentState = val
+		} else {
+			currentState, _ := transition.CurrentState.(State)
+			stringCurrentState = currentState.GetIdentifier()
+		}
+
+		if val, ok := transition.DestinationState.(string); ok {
+			stringDestinationState = val
+		} else {
+			destinationState, _ := transition.DestinationState.(State)
+			stringDestinationState = destinationState.GetIdentifier()
+		}
+
+		// check if the current state is the expected state on the transition rule
+		if transition.CurrentState == stringCurrentState {
 			//	check if destination state exist
-			if val, ok := s.StateMap[transition.DestinationState]; ok {
-				if transition.OnTransition != nil{
+			if val, ok := s.StateMap[stringDestinationState]; ok {
+				if transition.OnTransition != nil {
 					transition.OnTransition(transition, val, s.CurrentState)
 				}
 				s.CurrentState = val
 				return nil
 			}
-			return errors.New("Destination State not registered")
+			return errors.New("Destination State does not exist")
 		}
 		//	if the current state is not what the transition expects
 		return nil

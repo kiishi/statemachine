@@ -1,1 +1,1 @@
-## State Machine ![](https://github.com/kiishi/state-machine/workflows/CI/badge.svg)
+## State Machine ![](https://github.com/kiishi/statemachine/workflows/CI/badge.svg)
