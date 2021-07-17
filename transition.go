@@ -2,7 +2,7 @@ package statemachine
 
 type TransitionRule struct {
 	EventName        string
-	CurrentState     string
-	DestinationState string
+	CurrentState     interface{}
+	DestinationState interface{}
 	OnTransition     func(rule *TransitionRule, newState, previousState State)
 }
