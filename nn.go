@@ -1,9 +1,3 @@
-## State Machine ![](https://github.com/kiishi/statemachine/workflows/CI/badge.svg)
-Cool-ish state machine💅🏾
-
-### Sample Usage
-
-```go
 package main
 
 import (
@@ -55,4 +49,3 @@ func main() {
 	//	validate
 	fmt.Println(statemachine.GetCurrentState().GetIdentifier()) // outputs "cooked"
 }
-```
