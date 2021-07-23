@@ -103,7 +103,7 @@ func TestNewMachine(t *testing.T) {
 				&transition2,
 			},
 		})
-		sampleStateMachine.EmitSequence("move", "jump")
+		sampleStateMachine.EmitInSequence("move", "jump")
 
 		if sampleStateMachine.GetCurrentState().GetIdentifier() != strconv.Itoa(STATE3) {
 			t.Fail()
@@ -135,7 +135,7 @@ func TestNewMachine(t *testing.T) {
 				&transition2,
 			},
 		})
-		sampleStateMachine.EmitSequence("move", "jump")
+		sampleStateMachine.EmitInSequence("move", "jump")
 		if buffer.String() != "xy" {
 			t.Fail()
 		}
@@ -179,4 +179,18 @@ func TestNewMachine(t *testing.T) {
 		}
 	})
 
+	t.Run("should work properly when defined using the builder pattern", func(t *testing.T) {
+		sm := NewMachine()
+		sm.AddState(&state1)
+		sm.AddState(&state2)
+		sm.AddTransition(&TransitionRule{
+			EventName:        "move",
+			CurrentState:     &state1,
+			DestinationState: &state2,
+		})
+		sm.Emit("move")
+		if sm.GetCurrentState().GetIdentifier() != state1.GetIdentifier() {
+			t.Errorf("Current state at %s", sm.GetCurrentState().GetIdentifier())
+		}
+	})
 }

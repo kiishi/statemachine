@@ -38,23 +38,29 @@ func validateConfig(config *Config) {
 
 }
 
-func NewMachine(config *Config) *StateMachine {
+func NewMachine(config ...*Config) *StateMachine {
 	//throw an error is state array is empty
-	validateConfig(config)
+	if len(config) == 0 {
+		return &StateMachine{
+			StateMap:        make(map[string]State),
+			TransitionRules: make(map[string]*TransitionRule),
+		}
+	}
+	validateConfig(config[0])
 	newMachine := &StateMachine{
-		CurrentState:    config.States[0],
+		CurrentState:    config[0].States[0],
 		StateMap:        make(map[string]State),
 		TransitionRules: make(map[string]*TransitionRule),
 	}
 
-	if config.States != nil {
-		for _, val := range config.States {
+	if config[0].States != nil {
+		for _, val := range config[0].States {
 			newMachine.AddState(val)
 		}
 	}
 
-	if config.Transitions != nil {
-		for _, val := range config.Transitions {
+	if config[0].Transitions != nil {
+		for _, val := range config[0].Transitions {
 			newMachine.AddTransition(val)
 		}
 	}
@@ -62,20 +68,21 @@ func NewMachine(config *Config) *StateMachine {
 	return newMachine
 }
 
-func (s *StateMachine) AddTransition(transitionRule *TransitionRule) {
+func (s *StateMachine) AddTransition(transitionRule *TransitionRule) *StateMachine {
 	s.TransitionRules[transitionRule.EventName] = transitionRule
+	return s
 }
 
-func (s *StateMachine) AddState(state State) error {
+func (s *StateMachine) AddState(state State) *StateMachine {
 	// if the current state is nil, the first state added becomes the default state
 	if s.CurrentState == nil {
 		s.CurrentState = state
 	}
 	s.StateMap[state.GetIdentifier()] = state
-	return nil
+	return s
 }
 
-func (s *StateMachine) EmitSequence(eventNames ...string) error {
+func (s *StateMachine) EmitInSequence(eventNames ...string) error {
 	for _, event := range eventNames {
 		err := s.Emit(event)
 		if err != nil {

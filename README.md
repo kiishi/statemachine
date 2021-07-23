@@ -1,7 +1,52 @@
 ## State Machine ![](https://github.com/kiishi/statemachine/workflows/CI/badge.svg)
 Cool-ish state machine💅🏾
 
-### Sample Usage
+### Simple Usage
+
+```go
+package main
+
+import (
+	"fmt"
+	machine "github.com/kiishi/statemachine"
+)
+
+type FoodState struct {
+	name string
+}
+
+func (m *FoodState) GetIdentifier() string {
+	return m.name // name must be unique
+}
+
+func main() {
+	raw := FoodState{"raw"}
+	cooked := FoodState{"cooked"}
+	
+	statemachine := machine.NewMachine()
+	
+	statemachine.AddState(&raw) // this becomes the initial state 
+	statemachine.AddState(&cooked)
+	
+	statemachine.AddTransition(&machine.TransitionRule{
+		EventName:        "move",
+		CurrentState:     &raw,
+		DestinationState: &cooked,
+	})
+	
+	err := statemachine.Emit("move")
+	if err != nil {
+		// handle error here
+		panic(err)
+	}
+
+	//	validate
+	fmt.Println(statemachine.GetCurrentState().GetIdentifier()) // outputs "cooked"
+
+}
+```
+
+### Not So Simple Usage
 
 ```go
 package main
@@ -56,3 +101,4 @@ func main() {
 	fmt.Println(statemachine.GetCurrentState().GetIdentifier()) // outputs "cooked"
 }
 ```
+
